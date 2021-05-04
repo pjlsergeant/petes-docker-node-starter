@@ -1,0 +1,22 @@
+#!/usr/local/bin/bash
+set -o xtrace
+nm_mount=$(mktemp -d)
+docker build --quiet -t 50a2fabfdd276f573ff97ace8b11c5f4 .
+set +o xtrace
+
+if [ $1 = "shell" ];
+then
+    shift
+    set -o xtrace
+    docker run -v ${nm_mount}:/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/node_modules/ -v $(pwd):/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/ --rm -it --entrypoint /bin/ash 50a2fabfdd276f573ff97ace8b11c5f4 "$@"
+elif [ $1 = "install" ];
+then
+    shift
+    echo "This command makes the needed changes to package* but the module will reinstall properly next command"
+    set -o xtrace
+    docker run -v ${nm_mount}:/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/node_modules/ -v $(pwd):/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/ --rm -it 50a2fabfdd276f573ff97ace8b11c5f4 install --save --package-lock-only --no-package-lock "$@"
+else
+    set -o xtrace
+    docker run -v ${nm_mount}:/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/node_modules/ -v $(pwd):/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/ --rm -it 50a2fabfdd276f573ff97ace8b11c5f4 "$@"
+fi
+
