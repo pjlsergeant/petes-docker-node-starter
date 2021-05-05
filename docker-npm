@@ -49,10 +49,7 @@ elsif ( $command eq "install" ) {
     # Install it twice :-/
     else {
         run( system => @d_build );
-        run(
-            system => @d_run,
-            $command, '--package-lock-only', '--no-package-lock', @arguments
-        );
+        run( system => @d_run, $command, @arguments );
         print "Caching it inside Docker image\n";
     }
 

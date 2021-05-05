@@ -20,7 +20,7 @@ To install a module:
 
 `./docker-npm install module-name`
 
-Note that this will write `package.json` and `package-lock.json`, but the installation itself won't happen until the next time you run a `docker-npm` command. If the module takes a long time to install, you'll actually need to wait for it twice, which sucks, but this seems like the least nasty way.
+Note that `install module-name` by itself will take a sensible short-cut to mean you're waiting as little time as possible, but if it has more than one argument, it'll skip that short-cut, and you'll wait while there's an installation that updates `package*`, and then an installation that fixes that up.
 
 ## `./docker-npm`
 
