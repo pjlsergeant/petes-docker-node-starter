@@ -38,7 +38,7 @@ elsif ( $command eq "install" ) {
         my $version = run( backtick => qw/npm show/, $package, 'version' );
         my $updated = run(
             backtick => 'jq',
-            "'.dependencies.$package = \"$version\"'", 'package.json'
+            "'.dependencies.\"$package\" = \"$version\"'", 'package.json'
         );
         open( my $fh, '>', 'package.json' )
           || die "Can't open package.json for writing";
