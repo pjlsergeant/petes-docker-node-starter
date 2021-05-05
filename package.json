@@ -1,13 +1,15 @@
 {
-   "author" : "Peter Sergeant",
-   "description" : "",
-   "keywords" : [],
-   "license" : "ISC",
-   "main" : "index.js",
-   "name" : "50a2fabfdd276f573ff97ace8b11c5f4",
-   "private" : true,
-   "scripts" : {
-      "test" : "echo \"Error: no test specified\" && exit 1"
-   },
-   "version" : "1.0.0"
+  "author": "Peter Sergeant",
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "main": "index.js",
+  "name": "50a2fabfdd276f573ff97ace8b11c5f4",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.0.0",
+  "dependencies": {
+  }
 }
