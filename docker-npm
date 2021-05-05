@@ -1,22 +1,88 @@
-#!/usr/local/bin/bash
-set -o xtrace
-nm_mount=$(mktemp -d)
-docker build --quiet -t 50a2fabfdd276f573ff97ace8b11c5f4 .
-set +o xtrace
+#!/usr/bin/env perl
 
-if [ $1 = "shell" ];
-then
-    shift
-    set -o xtrace
-    docker run -v ${nm_mount}:/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/node_modules/ -v $(pwd):/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/ --rm -it --entrypoint /bin/ash 50a2fabfdd276f573ff97ace8b11c5f4 "$@"
-elif [ $1 = "install" ];
-then
-    shift
-    echo "This command makes the needed changes to package* but the module will reinstall properly next command"
-    set -o xtrace
-    docker run -v ${nm_mount}:/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/node_modules/ -v $(pwd):/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/ --rm -it 50a2fabfdd276f573ff97ace8b11c5f4 install --save --package-lock-only --no-package-lock "$@"
-else
-    set -o xtrace
-    docker run -v ${nm_mount}:/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/node_modules/ -v $(pwd):/home/50a2fabfdd276f573ff97ace8b11c5f4/deploy/ --rm -it 50a2fabfdd276f573ff97ace8b11c5f4 "$@"
-fi
+use strict;
+use warnings;
 
+use File::Temp qw/tempdir/;
+
+my ( $command, @arguments ) = @ARGV;
+$command ||= 'shell';
+
+my $proj = "50a2fabfdd276f573ff97ace8b11c5f4";
+
+my $fake_node_module_dir = tempdir( CLEANUP => 1 );
+my $pwd                  = run( backtick => 'pwd' );
+
+my @mounts = (
+    map { ( '-v', sprintf( "%s:%s", @$_ ) ) } (
+        [ $pwd,                  "/home/$proj/deploy/" ],
+        [ $fake_node_module_dir, "/home/$proj/deploy/node_modules/" ]
+    )
+);
+
+my @d_build = ( qw/docker build -t/, $proj, '.' );
+my @d_run   = ( qw/docker run/, @mounts, qw/--rm -it/, $proj );
+
+if ( $command eq "shell" ) {
+    run( system => @d_build );
+    push( @d_run, '--entrypoint', '/bin/ash', pop(@d_run) );
+    run( system => @d_run );
+}
+elsif ( $command eq "install" ) {
+
+    # Simplified install
+    if ( @arguments == 1 ) {
+        my $package = $arguments[0];
+
+        # This uses the host npm, but I think that's probably OK here
+        my $version = run( backtick => qw/npm show/, $package, 'version' );
+        my $updated = run(
+            backtick => 'jq',
+            "'.dependencies.$package = \"$version\"'", 'package.json'
+        );
+        open( my $fh, '>', 'package.json' )
+          || die "Can't open package.json for writing";
+        print $fh $updated;
+        close $fh;
+    }
+
+    # Install it twice :-/
+    else {
+        run( system => @d_build );
+        run(
+            system => @d_run,
+            $command, '--package-lock-only', '--no-package-lock', @arguments
+        );
+        print "Caching it inside Docker image\n";
+    }
+
+    run( system => grep { !/--quiet/ } @d_build );
+}
+else {
+    run( system => @d_build );
+    run( system => @d_run, $command, @arguments );
+}
+
+sub run {
+    my $type      = shift;
+    my @command   = @_;
+    my $as_string = join ' ', @command;
+
+    print "> $as_string\n";
+
+    my $exit_code = 0;
+    my $result;
+
+    if ( $type eq 'system' ) {
+        $exit_code = system(@command);
+    }
+    else {
+        $result    = `$as_string`;
+        $exit_code = $?;
+        chomp($result);
+    }
+
+    die "Failed: $?" if $exit_code;
+    return $result;
+
+}
