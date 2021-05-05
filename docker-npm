@@ -20,7 +20,7 @@ my @mounts = (
     )
 );
 
-my @d_build = ( qw/docker build -t/, $proj, '.' );
+my @d_build = ( qw/docker build -t --quiet/, $proj, '.' );
 my @d_run   = ( qw/docker run/, @mounts, qw/--rm -it/, $proj );
 
 if ( $command eq "shell" ) {
